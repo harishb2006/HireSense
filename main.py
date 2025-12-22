@@ -1,7 +1,7 @@
 from fastapi import FastAPI
+from routes import resume, jd
 
-app = FastAPI()
+app = FastAPI(title="HireSense API")
 
-@app.get("/")
-def read_root():
-    return {"message": "hello world"}
+app.include_router(resume.router)
+app.include_router(jd.router)
