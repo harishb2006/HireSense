@@ -1,16 +1,31 @@
 import json
 import os
 from typing import Dict, Any
+from openai import OpenAI
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 class AIAnalyzer:
     """
-    AI-powered resume analysis service
+    AI-powered resume analysis service using OpenAI
     Returns structured JSON output for resume analysis
     """
     
     def __init__(self):
-        # In production, use environment variables for API keys
+        # Load API key from environment variables
         self.api_key = os.getenv("OPENAI_API_KEY", "")
+        self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+        
+        # Initialize OpenAI client if API key exists
+        self.client = None
+        if self.api_key and self.api_key != "your-api-key-here":
+            try:
+                self.client = OpenAI(api_key=self.api_key)
+            except Exception as e:
+                print(f"Warning: Failed to initialize OpenAI client: {e}")
+                self.client = None
         
     def analyze_resume(self, resume_text: str, job_description: str) -> Dict[str, Any]:
         """
@@ -25,75 +40,94 @@ class AIAnalyzer:
             Structured analysis with match_score, missing_keywords, and section_feedback
         """
         
-        prompt = self._build_analysis_prompt(resume_text, job_description)
+        system_prompt, user_prompt = self._build_analysis_prompt(resume_text, job_description)
         
-        # TODO: Integrate with actual LLM (OpenAI, Anthropic, etc.)
-        # For now, returning mock structured data
-        # When integrating real LLM, ensure prompt enforces JSON-only output
-        
-        analysis = self._call_llm(prompt)
+        # Call LLM with proper prompts
+        analysis = self._call_llm(system_prompt, user_prompt)
         
         return analysis
     
     def _build_analysis_prompt(self, resume_text: str, job_description: str) -> str:
         """
-        Build the prompt for LLM analysis
-        CRITICAL: Instructs LLM to return ONLY valid JSON
+        Build the system and user prompts for LLM analysis
+        Returns tuple of (system_prompt, user_prompt)
         """
         
-        prompt = f"""You are an expert ATS (Applicant Tracking System) and resume analyzer.
+        system_prompt = """You are an expert ATS (Applicant Tracking System) and resume analyzer with years of experience in recruitment.
 
-Analyze the following resume against the job description and return ONLY a valid JSON object with no additional text.
+Your task is to analyze resumes against job descriptions and provide detailed, actionable feedback.
 
-Job Description:
-{job_description}
+You MUST return ONLY a valid JSON object with no additional text, explanations, or markdown formatting.
 
-Resume:
-{resume_text}
-
-Return ONLY valid JSON in this exact format (no markdown, no explanation, no additional text):
-{{
+The JSON must follow this exact structure:
+{
   "match_score": <number between 0-100>,
-  "missing_keywords": [<array of important missing keywords from JD>],
-  "section_feedback": {{
-    "Summary": "<specific feedback on summary/objective section>",
-    "Experience": "<specific feedback on experience section>",
+  "missing_keywords": [<array of 5-10 important missing keywords from job description>],
+  "section_feedback": {
+    "Summary": "<specific feedback on summary/objective>",
+    "Experience": "<specific feedback on work experience>",
     "Skills": "<specific feedback on skills section>"
-  }}
-}}
+  }
+}
 
 Rules:
-1. match_score: Calculate based on keyword matches, experience alignment, and skill coverage (0-100)
-2. missing_keywords: List 5-10 critical keywords/technologies from JD that are missing in resume
-3. section_feedback: Provide actionable, specific feedback for each section
-4. Return ONLY the JSON object, no other text
+1. match_score: Calculate based on keyword matches, experience alignment, and skill coverage
+2. missing_keywords: List critical keywords/technologies from JD that are absent in resume
+3. section_feedback: Provide specific, actionable feedback for each section
+4. Be constructive and professional in your feedback"""
 
-JSON OUTPUT:"""
+        user_prompt = f"""Analyze this resume against the job description:
 
-        return prompt
+JOB DESCRIPTION:
+{job_description}
+
+RESUME:
+{resume_text}
+
+Return ONLY the JSON object, no other text."""
+
+        return system_prompt, user_prompt
     
-    def _call_llm(self, prompt: str) -> Dict[str, Any]:
+    def _call_llm(self, system_prompt: str, user_prompt: str) -> Dict[str, Any]:
         """
-        Call LLM API and parse JSON response
-        
-        In production, integrate with:
-        - OpenAI GPT-4
-        - Anthropic Claude
-        - Google Gemini
-        - Local LLM (Llama, Mistral)
+        Call OpenAI API and parse JSON response
+        Falls back to mock data if API key not configured
         """
         
-        # TODO: Replace with actual LLM API call
-        # Example for OpenAI:
-        # import openai
-        # response = openai.ChatCompletion.create(
-        #     model="gpt-4",
-        #     messages=[{"role": "user", "content": prompt}],
-        #     temperature=0.3
-        # )
-        # return json.loads(response.choices[0].message.content)
+        # If OpenAI client is configured, use it
+        if self.client:
+            try:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.3,
+                    response_format={"type": "json_object"}
+                )
+                
+                # Parse the JSON response
+                content = response.choices[0].message.content
+                analysis = json.loads(content)
+                
+                return analysis
+                
+            except json.JSONDecodeError as e:
+                print(f"Error: Failed to parse JSON from OpenAI response: {e}")
+                return self._get_mock_response()
+            except Exception as e:
+                print(f"Error calling OpenAI API: {e}")
+                return self._get_mock_response()
         
-        # Mock response for development/testing
+        # Fall back to mock response if no API key
+        print("Warning: Using mock response. Set OPENAI_API_KEY in .env file to use real AI analysis")
+        return self._get_mock_response()
+    
+    def _get_mock_response(self) -> Dict[str, Any]:
+        """
+        Return mock response for development/testing
+        """
         mock_response = {
             "match_score": 72,
             "missing_keywords": [

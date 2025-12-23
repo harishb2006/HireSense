@@ -3,3 +3,5 @@ uvicorn[standard]==0.34.0
 python-multipart==0.0.20
 pypdf==6.5.0
 pydantic==2.10.5
+openai==2.14.0
+python-dotenv==1.2.1
