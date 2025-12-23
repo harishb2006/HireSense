@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import resume, jd
+from routes import resume, jd, analyze
 
 app = FastAPI(title="HireSense API")
 
@@ -15,6 +15,7 @@ app.add_middleware(
 
 app.include_router(resume.router)
 app.include_router(jd.router)
+app.include_router(analyze.router)
 
 @app.get("/")
 async def root():
