@@ -33,11 +33,12 @@ const ResumeUpload = ({ onAnalysisComplete }) => {
     setError('');
 
     const formData = new FormData();
-    formData.append('resume', resumeFile);
+    formData.append('file', resumeFile);
     formData.append('job_description', jobDescription);
 
     try {
-      const response = await fetch('http://localhost:8000/analyze', {
+      // Use the start-interview endpoint which does everything
+      const response = await fetch('http://localhost:8000/api/interview/start-interview', {
         method: 'POST',
         body: formData,
       });
@@ -47,7 +48,10 @@ const ResumeUpload = ({ onAnalysisComplete }) => {
       }
 
       const data = await response.json();
-      onAnalysisComplete(data);
+      onAnalysisComplete({
+        ...data,
+        jobDescription: jobDescription
+      });
     } catch (err) {
       setError('Failed to analyze resume. Please try again.');
       console.error('Error:', err);

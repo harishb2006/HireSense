@@ -12,6 +12,10 @@ function App() {
     setAnalysisData(data);
   };
 
+  const handleStartInterview = () => {
+    setActiveTab('interview');
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -64,7 +68,10 @@ function App() {
             {/* Analysis Results */}
             {analysisData && (
               <div className="animate-fadeIn">
-                <AIAnalysis data={analysisData} />
+                <AIAnalysis 
+                  data={analysisData} 
+                  onStartInterview={handleStartInterview}
+                />
               </div>
             )}
 
@@ -107,8 +114,20 @@ function App() {
             )}
           </>
         )}
-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        {/* AI Interview Tab */}
+        {activeTab === 'interview' && analysisData && (
+          <div className="animate-fadeIn">
+            <AIInterviewer 
+              resumeData={analysisData?.analysis} 
+              jobDescription={analysisData?.jobDescription}
+              interviewQuestions={analysisData?.interview?.questions}
+            />
+          </div>
+        )}
+
+        {/* Interview Features - Show when no interview started */}
+        {activeTab === 'interview' && !analysisData && (
               <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-blue-300 transition-all">
                 <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

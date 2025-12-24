@@ -319,3 +319,249 @@ Return ONLY the JSON object following the exact structure above."""
             return False
         
         return True
+    
+    def generate_interview_questions(
+        self, 
+        resume_text: str, 
+        job_description: str, 
+        analysis: Dict[str, Any],
+        count: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate targeted interview questions based on analysis
+        Focuses on weak areas and missing skills
+        """
+        
+        missing_keywords = analysis.get("missing_keywords", [])[:5]
+        gap_analysis = analysis.get("gap_analysis", {})
+        
+        system_prompt = """You are an experienced technical recruiter conducting a mock interview.
+Your goal is to ask questions that specifically target the candidate's WEAK AREAS and MISSING SKILLS identified in their resume analysis.
+
+Generate interview questions that:
+1. Test knowledge in areas where the candidate is weak
+2. Allow the candidate to demonstrate understanding of missing concepts
+3. Are realistic questions a hiring manager would ask for this role
+4. Mix technical, behavioral, and situational questions
+5. Help the candidate practice explaining gaps in their experience
+
+Return ONLY a JSON array of question objects:
+[
+  {
+    "question": "<the interview question>",
+    "category": "technical|behavioral|situational",
+    "focus_area": "<which weakness/gap this targets>",
+    "why_asking": "<brief explanation of why this question matters for this role>"
+  }
+]"""
+
+        user_prompt = f"""Based on this analysis, generate {count} targeted interview questions:
+
+JOB DESCRIPTION:
+{job_description}
+
+CANDIDATE'S WEAK AREAS:
+Missing Keywords: {', '.join([k.get('keyword', '') for k in missing_keywords])}
+Experience Gaps: {gap_analysis.get('experience_gaps', 'None identified')}
+Skills Gaps: {gap_analysis.get('skills_gaps', 'None identified')}
+
+RESUME SUMMARY:
+{resume_text[:500]}...
+
+Generate {count} questions that will help the candidate:
+1. Practice explaining their experience in the context of missing skills
+2. Demonstrate problem-solving in areas they're weak
+3. Show transferable skills that could compensate for gaps
+
+Return ONLY the JSON array of question objects."""
+
+        try:
+            if self.client:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.8,
+                    max_tokens=2000
+                )
+                
+                content = response.choices[0].message.content.strip()
+                content = content.replace("```json", "").replace("```", "").strip()
+                questions = json.loads(content)
+                
+                if isinstance(questions, list) and len(questions) > 0:
+                    return questions
+        except Exception as e:
+            print(f"⚠️ Question generation failed: {e}")
+        
+        # Fallback questions based on missing keywords
+        fallback_questions = []
+        for i, keyword_obj in enumerate(missing_keywords[:count]):
+            keyword = keyword_obj.get('keyword', 'technology')
+            fallback_questions.append({
+                "question": f"Can you describe your experience with {keyword}? If you haven't used it directly, how would you approach learning it?",
+                "category": "technical",
+                "focus_area": keyword,
+                "why_asking": f"This role requires {keyword} expertise, which wasn't prominent in your resume"
+            })
+        
+        # Add behavioral questions
+        if len(fallback_questions) < count:
+            fallback_questions.append({
+                "question": "Describe a time when you had to learn a new technology quickly to complete a project. What was your approach?",
+                "category": "behavioral",
+                "focus_area": "adaptability",
+                "why_asking": "Assessing your ability to fill skill gaps"
+            })
+        
+        if len(fallback_questions) < count:
+            fallback_questions.append({
+                "question": "Tell me about a challenging technical problem you solved. Walk me through your thought process.",
+                "category": "situational",
+                "focus_area": "problem-solving",
+                "why_asking": "Understanding your technical problem-solving approach"
+            })
+        
+        return fallback_questions[:count]
+    
+    def evaluate_interview_answer(
+        self,
+        question: str,
+        answer: str,
+        job_description: str,
+        resume_context: str = None
+    ) -> Dict[str, Any]:
+        """
+        Evaluate interview answer using STAR framework
+        Provides constructive feedback
+        """
+        
+        system_prompt = """You are a professional interview coach providing feedback on interview answers.
+
+Evaluate the answer using the STAR framework:
+- Situation: Did they set up the context?
+- Task: Did they explain what needed to be done?
+- Action: Did they describe what THEY specifically did?
+- Result: Did they share the outcome/impact?
+
+Return ONLY a JSON object:
+{
+  "score": <0-100>,
+  "star_analysis": {
+    "situation": "<present/missing/weak>",
+    "task": "<present/missing/weak>",
+    "action": "<present/missing/weak>",
+    "result": "<present/missing/weak>"
+  },
+  "strengths": ["<strength 1>", "<strength 2>"],
+  "improvements": ["<improvement 1>", "<improvement 2>"],
+  "suggestion": "<How to improve this answer specifically>",
+  "example_reframe": "<Better way to phrase this answer>"
+}"""
+
+        user_prompt = f"""Evaluate this interview answer:
+
+QUESTION: {question}
+
+ANSWER: {answer}
+
+JOB CONTEXT: {job_description[:300]}
+
+Provide constructive feedback using STAR framework.
+Return ONLY the JSON object."""
+
+        try:
+            if self.client:
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=1000
+                )
+                
+                content = response.choices[0].message.content.strip()
+                content = content.replace("```json", "").replace("```", "").strip()
+                feedback = json.loads(content)
+                return feedback
+        except Exception as e:
+            print(f"⚠️ Answer evaluation failed: {e}")
+        
+        # Fallback feedback
+        return {
+            "score": 70,
+            "star_analysis": {
+                "situation": "present" if len(answer) > 100 else "weak",
+                "task": "present" if "need" in answer.lower() or "required" in answer.lower() else "missing",
+                "action": "present" if "i " in answer.lower() or "my " in answer.lower() else "weak",
+                "result": "present" if any(word in answer.lower() for word in ["result", "outcome", "success", "achieved"]) else "missing"
+            },
+            "strengths": [
+                "Good attempt at answering the question",
+                "Relevant experience mentioned"
+            ],
+            "improvements": [
+                "Add more specific details using the STAR framework",
+                "Include quantifiable results or outcomes"
+            ],
+            "suggestion": "Structure your answer: Start with the situation/context, explain the task, detail YOUR specific actions, and conclude with measurable results",
+            "example_reframe": "Try: 'When I was at [Company], we faced [Situation]. I was tasked with [Task]. I specifically [Actions taken]. This resulted in [Quantifiable outcome].'"
+        }
+    
+    def generate_interview_summary(
+        self,
+        questions: List[str],
+        answers: List[Dict[str, Any]],
+        analysis: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """
+        Generate comprehensive interview performance summary
+        """
+        
+        # Calculate average score from answers
+        total_score = sum(a.get("feedback", {}).get("score", 0) for a in answers if "feedback" in a)
+        avg_score = total_score / len(answers) if answers else 0
+        
+        # Collect all strengths and improvements
+        all_strengths = []
+        all_improvements = []
+        
+        for answer in answers:
+            feedback = answer.get("feedback", {})
+            all_strengths.extend(feedback.get("strengths", []))
+            all_improvements.extend(feedback.get("improvements", []))
+        
+        # Deduplicate and limit
+        unique_strengths = list(set(all_strengths))[:3]
+        unique_improvements = list(set(all_improvements))[:3]
+        
+        return {
+            "overall_score": round(avg_score),
+            "performance_level": "Excellent" if avg_score >= 80 else "Good" if avg_score >= 60 else "Needs Improvement",
+            "strengths": unique_strengths if unique_strengths else [
+                "Engaged with all questions",
+                "Demonstrated relevant experience",
+                "Showed willingness to learn"
+            ],
+            "improvements": unique_improvements if unique_improvements else [
+                "Use more specific examples with metrics",
+                "Follow STAR framework more closely",
+                "Connect answers more directly to job requirements"
+            ],
+            "recommendations": [
+                "Practice answering questions using the STAR (Situation, Task, Action, Result) framework",
+                "Prepare specific metrics and achievements from your experience",
+                "Research the company and role more deeply to tailor your answers",
+                f"Focus on improving skills in: {', '.join([k.get('keyword', '') for k in analysis.get('missing_keywords', [])[:3]])}"
+            ],
+            "next_steps": [
+                "Review the missing keywords and work on building those skills",
+                "Update your resume based on the analysis feedback",
+                "Practice more mock interviews to build confidence",
+                "Consider taking courses or certifications in identified gap areas"
+            ]
+        }
