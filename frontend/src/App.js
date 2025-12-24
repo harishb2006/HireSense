@@ -55,37 +55,41 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>HireSense</h1>
-        <p>AI-Powered Resume & Job Description Analysis</p>
+    <div className="min-h-screen bg-gray-100">
+      <header className="bg-slate-700 text-white py-8 px-10 text-center mb-10 border-b-4 border-slate-800">
+        <h1 className="text-4xl font-semibold mb-2 tracking-tight">HireSense</h1>
+        <p className="text-lg opacity-90">AI-Powered Resume & Job Description Analysis</p>
       </header>
 
-      <div className="container">
-        <div className="section">
-          <h2>📄 Upload Resume</h2>
-          <form onSubmit={handleResumeUpload}>
+      <div className="max-w-7xl mx-auto px-5 grid md:grid-cols-2 gap-8">
+        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-slate-700 mb-5 text-2xl font-semibold">📄 Upload Resume</h2>
+          <form onSubmit={handleResumeUpload} className="flex flex-col gap-4">
             <input
               type="file"
               accept=".pdf"
               onChange={(e) => setResumeFile(e.target.files[0])}
-              className="file-input"
+              className="p-3 border-2 border-dashed border-gray-300 rounded bg-gray-50 cursor-pointer text-sm hover:border-slate-700 hover:bg-white transition-colors"
             />
-            <button type="submit" disabled={loading.resume}>
+            <button 
+              type="submit" 
+              disabled={loading.resume}
+              className="bg-slate-700 text-white px-6 py-3 rounded font-medium hover:bg-slate-800 active:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
               {loading.resume ? 'Processing...' : 'Upload Resume'}
             </button>
           </form>
           {resumeResult && (
-            <div className={`result ${resumeResult.error ? 'error' : 'success'}`}>
+            <div className={`mt-5 p-5 rounded-lg ${resumeResult.error ? 'bg-red-50 border-2 border-red-200 text-red-800' : 'bg-green-50 border-2 border-green-200 text-green-800'}`}>
               {resumeResult.error ? (
                 <p>❌ {resumeResult.error}</p>
               ) : (
                 <>
-                  <h3>✅ Resume Processed!</h3>
+                  <h3 className="mb-4 text-xl font-semibold">✅ Resume Processed!</h3>
                   <p><strong>Filename:</strong> {resumeResult.filename}</p>
-                  <div className="text-preview">
+                  <div className="mt-4">
                     <strong>Extracted Text:</strong>
-                    <pre>{resumeResult.resume_text?.substring(0, 500)}...</pre>
+                    <pre className="bg-black/5 p-4 rounded mt-2 whitespace-pre-wrap break-words text-sm max-h-72 overflow-y-auto">{resumeResult.resume_text?.substring(0, 500)}...</pre>
                   </div>
                 </>
               )}
@@ -93,29 +97,34 @@ function App() {
           )}
         </div>
 
-        <div className="section">
-          <h2>💼 Submit Job Description</h2>
-          <form onSubmit={handleJDSubmit}>
+        <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
+          <h2 className="text-slate-700 mb-5 text-2xl font-semibold">💼 Submit Job Description</h2>
+          <form onSubmit={handleJDSubmit} className="flex flex-col gap-4">
             <textarea
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
               placeholder="Paste job description here..."
               rows="10"
+              className="p-3 border border-gray-300 rounded text-sm resize-y focus:outline-none focus:border-slate-700 focus:ring-2 focus:ring-slate-700/10 transition-all"
             />
-            <button type="submit" disabled={loading.jd}>
+            <button 
+              type="submit" 
+              disabled={loading.jd}
+              className="bg-slate-700 text-white px-6 py-3 rounded font-medium hover:bg-slate-800 active:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
               {loading.jd ? 'Processing...' : 'Submit JD'}
             </button>
           </form>
           {jdResult && (
-            <div className={`result ${jdResult.error ? 'error' : 'success'}`}>
+            <div className={`mt-5 p-5 rounded-lg ${jdResult.error ? 'bg-red-50 border-2 border-red-200 text-red-800' : 'bg-green-50 border-2 border-green-200 text-green-800'}`}>
               {jdResult.error ? (
                 <p>❌ {jdResult.error}</p>
               ) : (
                 <>
-                  <h3>✅ Job Description Processed!</h3>
-                  <div className="text-preview">
+                  <h3 className="mb-4 text-xl font-semibold">✅ Job Description Processed!</h3>
+                  <div className="mt-4">
                     <strong>Cleaned Text:</strong>
-                    <pre>{jdResult.cleaned_job_description}</pre>
+                    <pre className="bg-black/5 p-4 rounded mt-2 whitespace-pre-wrap break-words text-sm max-h-72 overflow-y-auto">{jdResult.cleaned_job_description}</pre>
                   </div>
                 </>
               )}
