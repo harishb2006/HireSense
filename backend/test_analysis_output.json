@@ -1,0 +1,68 @@
+{
+  "match_score": 45,
+  "overall_assessment": "This resume would likely NOT pass initial ATS screening. The match score of 45% indicates significant gaps in technical keywords, relevant experience presentation, and alignment with the job requirements.",
+  "why_not_passing": {
+    "main_reasons": [
+      "Missing critical cloud infrastructure keywords that are essential for this role (Docker, Kubernetes, AWS services)",
+      "Experience descriptions don't emphasize scalability, distributed systems, or microservices architecture",
+      "No clear demonstration of DevOps practices or CI/CD pipeline experience"
+    ],
+    "ats_perspective": "ATS systems scan for exact keyword matches and semantic relevance. This resume lacks 60% of the critical technical terms from the job description. The system would flag it as 'underqualified' because key technologies (containerization, orchestration, cloud platforms) are either absent or not prominently featured."
+  },
+  "missing_keywords": [
+    {
+      "keyword": "Docker",
+      "importance": "critical",
+      "why_matters": "Docker containerization is fundamental to modern DevOps practices. Its absence suggests you may not have hands-on experience with containerized deployments, which is a dealbreaker for this role."
+    },
+    {
+      "keyword": "Kubernetes",
+      "importance": "critical",
+      "why_matters": "Kubernetes orchestration is explicitly mentioned as a required skill. Without it, the hiring team will assume you can't manage production-scale containerized applications."
+    },
+    {
+      "keyword": "Microservices Architecture",
+      "importance": "high",
+      "why_matters": "The role requires designing and maintaining microservices. Not mentioning this suggests you may have only monolithic application experience, which doesn't meet the job's architectural needs."
+    },
+    {
+      "keyword": "CI/CD Pipeline",
+      "importance": "high",
+      "why_matters": "Continuous integration and deployment is core to the DevOps workflow. Its absence indicates you might not be familiar with automated testing and deployment processes."
+    },
+    {
+      "keyword": "AWS (Lambda, ECS, ECR)",
+      "importance": "critical",
+      "why_matters": "The company's infrastructure is AWS-based. Not showcasing specific AWS services means you'll need extensive onboarding, which they want to avoid."
+    }
+  ],
+  "gap_analysis": {
+    "experience_gaps": "The job requires 3-5 years of DevOps experience with proven track record in cloud infrastructure. Your resume shows software development experience but doesn't clearly articulate infrastructure management, monitoring, or deployment automation responsibilities. Hiring managers need to see specific examples of infrastructure you've built, scaled, or maintained.",
+    "skills_gaps": "Critical technical gaps: No container orchestration tools mentioned, no infrastructure-as-code experience (Terraform, CloudFormation), no monitoring tools (Prometheus, Grafana). The job emphasizes these as day-1 requirements, and their absence suggests a fundamental skills mismatch.",
+    "qualification_gaps": "While you have a CS degree, there's no mention of relevant certifications (AWS Certified Solutions Architect, Kubernetes Admin) that would validate your cloud expertise. For senior roles, certifications help compensate for experience gaps."
+  },
+  "section_detailed_feedback": {
+    "summary": {
+      "current_state": "Generic software engineer summary focusing on 'problem-solving' and 'team collaboration' without technical depth",
+      "problem": "Doesn't position you as a DevOps/Cloud specialist. The summary should immediately signal your cloud infrastructure expertise and mention 2-3 of the critical technologies from the JD",
+      "impact": "ATS scores summaries heavily. A generic summary means you're competing as a 'generalist' when this role needs a 'specialist'. This alone could drop your score by 15-20 points."
+    },
+    "experience": {
+      "current_state": "Experience bullets focus on feature development and team coordination but lack infrastructure/deployment specifics",
+      "problem": "Job descriptions emphasize WHAT you built (infrastructure, pipelines, monitoring systems) not just development work. Your bullets don't show you've operated in a DevOps capacity",
+      "impact": "Hiring managers will question if you've actually done the infrastructure work they need. Without deployment and scaling examples, you seem like a developer, not a DevOps engineer."
+    },
+    "skills": {
+      "current_state": "Skills list includes programming languages (Python, JavaScript) but minimal DevOps tools",
+      "problem": "The skills section is where ATS does heavy keyword matching. You're missing 8+ critical keywords: Docker, K8s, Terraform, Jenkins, GitLab CI, CloudFormation, AWS services, monitoring tools",
+      "impact": "ATS systems weight skills section at 40-50% of total score. Your current skills profile matches maybe 30% of requirements, significantly lowering your overall match score."
+    }
+  },
+  "actionable_next_steps": [
+    "IMMEDIATE: Add a 'Cloud & DevOps Technologies' section listing: Docker, Kubernetes, AWS (EC2, ECS, Lambda, S3, RDS), CI/CD tools, Infrastructure as Code tools",
+    "REWRITE SUMMARY: Position yourself as 'DevOps Engineer with X years cloud infrastructure experience' and mention 3 key technologies from the JD in the first line",
+    "REVISE EXPERIENCE BULLETS: For each role, add 2-3 bullets specifically about infrastructure work - deployments, automation, scaling, monitoring. Use metrics (reduced deployment time by X%, managed infrastructure for Y users)",
+    "ADD PROJECTS SECTION: If lacking professional DevOps experience, include personal projects showing Docker/K8s/AWS work. Even side projects demonstrate capability.",
+    "GET CERTIFIED: Consider AWS Solutions Architect Associate or CKA (Certified Kubernetes Administrator) certification to validate your cloud skills"
+  ]
+}
