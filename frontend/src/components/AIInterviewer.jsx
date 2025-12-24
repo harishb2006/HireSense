@@ -1,17 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-const AIInterviewer = ({ resumeData, jobDescription }) => {
+const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
   const [messages, setMessages] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState('');
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [userAnswer, setUserAnswer] = useState('');
   const [loading, setLoading] = useState(false);
   const [interviewStarted, setInterviewStarted] = useState(false);
   const [interviewComplete, setInterviewComplete] = useState(false);
-  const [questionCount, setQuestionCount] = useState(0);
+  const [questions, setQuestions] = useState(interviewQuestions || []);
+  const [answers, setAnswers] = useState([]);
   const [feedback, setFeedback] = useState(null);
   const messagesEndRef = useRef(null);
 
-  const maxQuestions = 5;
+  const maxQuestions = questions.length || 5;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -27,47 +29,39 @@ const AIInterviewer = ({ resumeData, jobDescription }) => {
     
     const welcomeMessage = {
       type: 'ai',
-      content: `Hello! I'm your AI interviewer. I'll be conducting a mock interview based on the job description you provided. This interview will consist of ${maxQuestions} questions covering technical skills, experience, and behavioral aspects. Let's begin!`,
+      content: `Hello! I'm your AI interviewer. Based on your resume analysis, I've identified some areas where you can improve. This interview will consist of ${maxQuestions} targeted questions focusing on your weak areas and missing skills. Let's begin!`,
       timestamp: new Date().toISOString()
     };
     
     setMessages([welcomeMessage]);
     
-    // Generate first question
+    // Start with first question
     setTimeout(() => {
-      generateQuestion();
+      askQuestion(0);
     }, 1500);
   };
 
-  const generateQuestion = async () => {
-    setLoading(true);
-    
-    try {
-      // Simulate AI question generation
-      const questions = [
-        "Can you walk me through your most relevant work experience for this position?",
-        "What technical skills from your resume align best with this role?",
-        "Describe a challenging project you've worked on and how you overcame obstacles.",
-        "How do you stay updated with the latest technologies and industry trends?",
-        "Why do you think you're a good fit for this position based on the job requirements?"
-      ];
-      
-      const question = questions[questionCount] || "Tell me about a time when you demonstrated leadership.";
-      
-      setCurrentQuestion(question);
-      
-      const aiMessage = {
-        type: 'ai',
-        content: question,
-        timestamp: new Date().toISOString()
-      };
-      
-      setMessages(prev => [...prev, aiMessage]);
-      setLoading(false);
-    } catch (error) {
-      console.error('Error generating question:', error);
-      setLoading(false);
+  const askQuestion = (index) => {
+    if (index >= questions.length) {
+      completeInterview();
+      return;
     }
+
+    const questionObj = questions[index];
+    const questionText = typeof questionObj === 'string' ? questionObj : questionObj.question;
+    
+    setCurrentQuestion(questionText);
+    setCurrentQuestionIndex(index);
+    
+    const aiMessage = {
+      type: 'ai',
+      content: questionText,
+      timestamp: new Date().toISOString(),
+      questionData: questionObj
+    };
+    
+    setMessages(prev => [...prev, aiMessage]);
+    setLoading(false);
   };
 
   const submitAnswer = async () => {
@@ -80,36 +74,111 @@ const AIInterviewer = ({ resumeData, jobDescription }) => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const answerText = userAnswer;
     setUserAnswer('');
     setLoading(true);
 
-    // Simulate AI feedback
-    setTimeout(() => {
-      const feedbackMessage = {
-        type: 'ai',
-        content: "Thank you for your answer. That's a good response showing your experience and skills.",
-        timestamp: new Date().toISOString(),
-        isFeedback: true
-      };
-      
-      setMessages(prev => [...prev, feedbackMessage]);
-      
-      const newCount = questionCount + 1;
-      setQuestionCount(newCount);
-      
-      if (newCount >= maxQuestions) {
-        setTimeout(() => {
-          completeInterview();
-        }, 1500);
+    try {
+      // Call backend to evaluate answer
+      const response = await fetch('http://localhost:8000/api/interview/evaluate-answer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: currentQuestion,
+          answer: answerText,
+          job_description: jobDescription || '',
+          resume_context: JSON.stringify(resumeData)
+        }),
+      });
+
+      if (response.ok) {
+        const evalFeedback = await response.json();
+        
+        const feedbackMessage = {
+          type: 'ai',
+          content: `Score: ${evalFeedback.score}/100. ${evalFeedback.suggestion}`,
+          timestamp: new Date().toISOString(),
+          isFeedback: true
+        };
+        
+        setMessages(prev => async () => {
+    setInterviewComplete(true);
+    setLoading(true);
+    
+    const completionMessage = {
+      type: 'ai',
+      content: `Great job! You've completed the interview. I've assessed your responses and will now provide comprehensive feedback.`,
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, completionMessage]);
+    
+    try {
+      // Call backend for comprehensive summary
+      const response = await fetch('http://localhost:8000/api/interview/complete-interview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          session_id: Date.now().toString(),
+          resume_text: '',
+          job_description: jobDescription || '',
+          analysis: resumeData || {},
+          questions: questions.map(q => typeof q === 'string' ? q : q.question),
+          answers: answers
+        }),
+      });
+
+      if (response.ok) {
+        const summaryFeedback = await response.json();
+        setFeedback(summaryFeedback);
       } else {
-        setTimeout(() => {
-          generateQuestion();
-        }, 1500);
+        // Fallback feedback
+        generateFallbackFeedback();
       }
-    }, 2000);
+    } catch (error) {
+      console.error('Error getting interview summary:', error);
+      generateFallbackFeedback();
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const completeInterview = () => {
+  const generateFallbackFeedback = () => {
+    const avgScore = answers.length > 0
+      ? answers.reduce((sum, a) => sum + (a.feedback?.score || 70), 0) / answers.length
+      : 70;
+
+    setFeedback({
+      overall_score: Math.round(avgScore),
+      performance_level: avgScore >= 80 ? 'Excellent' : avgScore >= 60 ? 'Good' : 'Needs Improvement',
+      strengths: [
+        'Clear communication and articulation',
+        'Relevant experience demonstrated',
+        'Good engagement with questions'
+      ],
+      improvements: [
+        'Provide more specific examples with metrics',
+        'Use STAR framework more consistently',
+        'Connect answers more directly to job requirements'
+      ],
+      recommendations: [
+        'Practice the STAR method for behavioral questions',
+        'Prepare specific metrics from past achievements',
+        'Research the company and role more deeply'
+      ],
+      next_steps: [
+        'Review missing keywords from analysis',
+        'Update resume based on feedback',
+        'Practice more mock interviews',
+       CurrentQuestionIndex(0);
+    setUserAnswer('');
+    setInterviewStarted(false);
+    setInterviewComplete(false);
+    setAnswers([]iew = () => {
     setInterviewComplete(true);
     setLoading(false);
     
@@ -230,12 +299,12 @@ const AIInterviewer = ({ resumeData, jobDescription }) => {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold">AI Mock Interview</h2>
-                <p className="text-blue-100 text-sm">Question {Math.min(questionCount + 1, maxQuestions)} of {maxQuestions}</p>
+                <h2 className="text-xl font-bold">AI Mock Interview</h2>currentQuestionIndex + 1, maxQuestions)} of {maxQuestions}</p>
               </div>
             </div>
             {!interviewComplete && (
               <div className="text-right">
+                <div className="text-2xl font-bold">{Math.round((currentQuestionIndex
                 <div className="text-2xl font-bold">{Math.round((questionCount / maxQuestions) * 100)}%</div>
                 <div className="text-blue-100 text-sm">Complete</div>
               </div>
@@ -306,17 +375,17 @@ const AIInterviewer = ({ resumeData, jobDescription }) => {
             
             <div className="grid md:grid-cols-3 gap-4 mb-6">
               <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-4 text-center">
-                <div className="text-4xl font-bold text-blue-600 mb-2">{feedback.overallScore}%</div>
+                <div className="text-4xl font-bold text-blue-600 mb-2">{feedback.overall_score}%</div>
                 <div className="text-gray-700 font-medium">Overall Score</div>
               </div>
               
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
-                <div className="text-4xl font-bold text-green-600 mb-2">{feedback.strengths.length}</div>
+                <div className="text-4xl font-bold text-green-600 mb-2">{feedback.strengths?.length || 0}</div>
                 <div className="text-gray-700 font-medium">Strengths</div>
               </div>
               
               <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 text-center">
-                <div className="text-4xl font-bold text-orange-600 mb-2">{feedback.improvements.length}</div>
+                <div className="text-4xl font-bold text-orange-600 mb-2">{feedback.improvements?.length || 0}</div>
                 <div className="text-gray-700 font-medium">Areas to Improve</div>
               </div>
             </div>
@@ -330,7 +399,7 @@ const AIInterviewer = ({ resumeData, jobDescription }) => {
                   Strengths
                 </h4>
                 <ul className="space-y-2">
-                  {feedback.strengths.map((strength, idx) => (
+                  {(feedback.strengths || []).map((strength, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-gray-700">
                       <span className="text-green-600 mt-1">•</span>
                       {strength}
@@ -347,7 +416,7 @@ const AIInterviewer = ({ resumeData, jobDescription }) => {
                   Areas for Improvement
                 </h4>
                 <ul className="space-y-2">
-                  {feedback.improvements.map((improvement, idx) => (
+                  {(feedback.improvements || []).map((improvement, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-gray-700">
                       <span className="text-orange-600 mt-1">•</span>
                       {improvement}
@@ -364,7 +433,7 @@ const AIInterviewer = ({ resumeData, jobDescription }) => {
                   Recommendations
                 </h4>
                 <ul className="space-y-2">
-                  {feedback.recommendations.map((recommendation, idx) => (
+                  {(feedback.recommendations || []).map((recommendation, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-gray-700">
                       <span className="text-blue-600 mt-1">•</span>
                       {recommendation}
