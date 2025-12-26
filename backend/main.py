@@ -7,7 +7,12 @@ app = FastAPI(title="HireSense API")
 # Enable CORS for frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific frontend URL
+    allow_origins=[
+        "http://localhost:5173",  # Local Vite dev server
+        "http://localhost:4173",  # Local Vite preview
+        "https://hire-sense-63teo8xko-harishs-projects-605e156a.vercel.app",  # Vercel deployment
+        "https://*.vercel.app",  # All Vercel preview deployments
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
