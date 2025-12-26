@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Dict, Any
+from typing import Dict, Any, List
 from cerebras.cloud.sdk import Cerebras
 from dotenv import load_dotenv
 
@@ -377,6 +377,7 @@ Return ONLY the JSON array of question objects."""
 
         try:
             if self.client:
+                print("🤖 Generating interview questions with AI...")
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=[
@@ -388,43 +389,80 @@ Return ONLY the JSON array of question objects."""
                 )
                 
                 content = response.choices[0].message.content.strip()
+                print(f"✅ Received {len(content)} chars from AI")
                 content = content.replace("```json", "").replace("```", "").strip()
                 questions = json.loads(content)
                 
                 if isinstance(questions, list) and len(questions) > 0:
+                    print(f"✅ Generated {len(questions)} questions")
                     return questions
+            else:
+                print("⚠️  No AI client configured, using fallback questions")
         except Exception as e:
-            print(f"⚠️ Question generation failed: {e}")
+            print(f"❌ AI question generation error: {e}")
+            print("⚠️  Falling back to template questions")
         
-        # Fallback questions based on missing keywords
-        fallback_questions = []
-        for i, keyword_obj in enumerate(missing_keywords[:count]):
-            keyword = keyword_obj.get('keyword', 'technology')
-            fallback_questions.append({
-                "question": f"Can you describe your experience with {keyword}? If you haven't used it directly, how would you approach learning it?",
+        # Fallback: Generate questions based on missing keywords
+        return self._generate_fallback_questions(missing_keywords, gap_analysis, count)
+    
+    def _generate_fallback_questions(
+        self,
+        missing_keywords: List[Dict[str, Any]],
+        gap_analysis: Dict[str, Any],
+        count: int = 5
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate fallback interview questions when AI is unavailable
+        """
+        questions = []
+        
+        # Technical questions based on missing keywords
+        for i, keyword_obj in enumerate(missing_keywords[:min(3, count)]):
+            keyword = keyword_obj.get('keyword', 'technical skill')
+            questions.append({
+                "question": f"Can you describe your experience with {keyword}? How have you applied it in your previous projects?",
                 "category": "technical",
                 "focus_area": keyword,
-                "why_asking": f"This role requires {keyword} expertise, which wasn't prominent in your resume"
+                "why_asking": f"This role requires proficiency in {keyword}, which wasn't clearly evident in your resume."
             })
         
-        # Add behavioral questions
-        if len(fallback_questions) < count:
-            fallback_questions.append({
-                "question": "Describe a time when you had to learn a new technology quickly to complete a project. What was your approach?",
+        # Behavioral question about experience gaps
+        if gap_analysis.get('experience_gaps') and len(questions) < count:
+            questions.append({
+                "question": "Tell me about a time when you had to quickly learn a new technology or skill to complete a project. How did you approach it?",
                 "category": "behavioral",
-                "focus_area": "adaptability",
-                "why_asking": "Assessing your ability to fill skill gaps"
+                "focus_area": "Learning agility",
+                "why_asking": "Assessing your ability to adapt and learn new skills quickly."
             })
         
-        if len(fallback_questions) < count:
-            fallback_questions.append({
-                "question": "Tell me about a challenging technical problem you solved. Walk me through your thought process.",
+        # Situational question about skills gaps
+        if gap_analysis.get('skills_gaps') and len(questions) < count:
+            questions.append({
+                "question": "If you were given a project that required skills you don't currently have, how would you approach it?",
                 "category": "situational",
-                "focus_area": "problem-solving",
-                "why_asking": "Understanding your technical problem-solving approach"
+                "focus_area": "Problem-solving",
+                "why_asking": "Understanding how you handle knowledge gaps in real-world scenarios."
             })
         
-        return fallback_questions[:count]
+        # General technical depth question
+        if len(questions) < count:
+            questions.append({
+                "question": "Walk me through your most technically challenging project. What made it challenging and how did you overcome those challenges?",
+                "category": "technical",
+                "focus_area": "Technical depth",
+                "why_asking": "Assessing your technical problem-solving abilities and depth of experience."
+            })
+        
+        # Team collaboration question
+        if len(questions) < count:
+            questions.append({
+                "question": "Describe a situation where you had to work with a difficult team member. How did you handle it and what was the outcome?",
+                "category": "behavioral",
+                "focus_area": "Team collaboration",
+                "why_asking": "Evaluating your interpersonal and conflict resolution skills."
+            })
+        
+        return questions[:count]
     
     def evaluate_interview_answer(
         self,
@@ -474,6 +512,7 @@ Return ONLY the JSON object."""
 
         try:
             if self.client:
+                print("🤖 Evaluating answer with AI...")
                 response = self.client.chat.completions.create(
                     model=self.model,
                     messages=[
@@ -487,29 +526,95 @@ Return ONLY the JSON object."""
                 content = response.choices[0].message.content.strip()
                 content = content.replace("```json", "").replace("```", "").strip()
                 feedback = json.loads(content)
+                print(f"✅ Evaluation complete: {feedback.get('score', 0)}/100")
                 return feedback
+            else:
+                print("⚠️  No AI client configured, using rule-based evaluation")
         except Exception as e:
-            print(f"⚠️ Answer evaluation failed: {e}")
+            print(f"❌ AI evaluation error: {e}")
+            print("⚠️  Falling back to rule-based evaluation")
         
-        # Fallback feedback
+        # Fallback: Basic rule-based evaluation
+        return self._evaluate_answer_fallback(answer)
+    
+    def _evaluate_answer_fallback(self, answer: str) -> Dict[str, Any]:
+        """
+        Basic rule-based answer evaluation when AI is unavailable
+        """
+        answer_lower = answer.lower()
+        answer_length = len(answer.split())
+        
+        # Calculate score based on answer characteristics
+        score = 50  # Base score
+        
+        star_components = {
+            "situation": "missing",
+            "task": "missing",
+            "action": "missing",
+            "result": "missing"
+        }
+        
+        # Check for STAR elements
+        situation_keywords = ["when", "while", "during", "at", "in my role"]
+        task_keywords = ["needed to", "required", "had to", "was responsible", "objective"]
+        action_keywords = ["i", "implemented", "developed", "created", "led", "managed"]
+        result_keywords = ["resulted", "achieved", "improved", "increased", "reduced", "%"]
+        
+        if any(kw in answer_lower for kw in situation_keywords):
+            star_components["situation"] = "present"
+            score += 10
+        
+        if any(kw in answer_lower for kw in task_keywords):
+            star_components["task"] = "present"
+            score += 10
+        
+        if any(kw in answer_lower for kw in action_keywords):
+            star_components["action"] = "present"
+            score += 15
+        
+        if any(kw in answer_lower for kw in result_keywords):
+            star_components["result"] = "present"
+            score += 15
+        
+        # Length bonus
+        if answer_length >= 50:
+            score += 10
+        elif answer_length < 20:
+            score -= 10
+        
+        score = max(0, min(100, score))  # Clamp between 0-100
+        
+        strengths = []
+        improvements = []
+        
+        if star_components["action"] == "present":
+            strengths.append("Clearly described actions taken")
+        else:
+            improvements.append("Add more details about what YOU specifically did")
+        
+        if star_components["result"] == "present":
+            strengths.append("Included outcomes or results")
+        else:
+            improvements.append("Include measurable results or impact")
+        
+        if answer_length >= 50:
+            strengths.append("Provided detailed response")
+        else:
+            improvements.append("Expand your answer with more specific details")
+        
+        if not strengths:
+            strengths = ["Attempted to answer the question"]
+        
+        if not improvements:
+            improvements = ["Consider adding more context and examples"]
+        
         return {
-            "score": 70,
-            "star_analysis": {
-                "situation": "present" if len(answer) > 100 else "weak",
-                "task": "present" if "need" in answer.lower() or "required" in answer.lower() else "missing",
-                "action": "present" if "i " in answer.lower() or "my " in answer.lower() else "weak",
-                "result": "present" if any(word in answer.lower() for word in ["result", "outcome", "success", "achieved"]) else "missing"
-            },
-            "strengths": [
-                "Good attempt at answering the question",
-                "Relevant experience mentioned"
-            ],
-            "improvements": [
-                "Add more specific details using the STAR framework",
-                "Include quantifiable results or outcomes"
-            ],
-            "suggestion": "Structure your answer: Start with the situation/context, explain the task, detail YOUR specific actions, and conclude with measurable results",
-            "example_reframe": "Try: 'When I was at [Company], we faced [Situation]. I was tasked with [Task]. I specifically [Actions taken]. This resulted in [Quantifiable outcome].'"
+            "score": score,
+            "star_analysis": star_components,
+            "strengths": strengths,
+            "improvements": improvements,
+            "suggestion": "Try to structure your answer using the STAR framework: describe the Situation, explain the Task, detail your Actions, and share the Results.",
+            "example_reframe": f"Consider rephrasing to: 'In [situation], I needed to [task]. I [specific actions], which resulted in [measurable outcome].'"
         }
     
     def generate_interview_summary(
@@ -564,4 +669,141 @@ Return ONLY the JSON object."""
                 "Practice more mock interviews to build confidence",
                 "Consider taking courses or certifications in identified gap areas"
             ]
+        }
+    
+    def rewrite_bullet_with_star(
+        self,
+        original_bullet: str,
+        job_description: str,
+        resume_context: str = None
+    ) -> Dict[str, Any]:
+        """
+        Rewrite a resume bullet point using STAR framework
+        Emphasizes impact over tasks
+        """
+        
+        system_prompt = """You are an expert resume writer who specializes in transforming weak bullet points into impactful STAR-format accomplishments.
+
+Your goal is to take a task-oriented bullet and rewrite it to emphasize:
+- Situation/Context (briefly)
+- Task/Challenge 
+- Action (specific steps YOU took)
+- Result (quantifiable impact, metrics, outcomes)
+
+Return ONLY a JSON object:
+{
+  "original": "<the original bullet>",
+  "rewritten": "<the improved STAR-format bullet>",
+  "improvements": {
+    "before_issues": ["<issue 1>", "<issue 2>"],
+    "after_strengths": ["<strength 1>", "<strength 2>"]
+  },
+  "star_breakdown": {
+    "situation": "<what was the context>",
+    "task": "<what needed to be done>",
+    "action": "<what you specifically did>",
+    "result": "<quantifiable outcome>"
+  },
+  "keywords_added": ["<keyword 1>", "<keyword 2>"],
+  "impact_score_improvement": <0-100, how much better is this>
+}
+
+RULES:
+1. Start with an action verb (Led, Developed, Implemented, Optimized, etc.)
+2. Include specific metrics/numbers (%, $, time saved, users impacted)
+3. Focus on RESULTS and IMPACT, not just tasks
+4. Make it relevant to the target job description
+5. Keep it concise (1-2 lines max)
+6. Use industry-standard keywords from the JD"""
+
+        user_prompt = f"""Rewrite this resume bullet point using STAR framework:
+
+ORIGINAL BULLET:
+{original_bullet}
+
+TARGET JOB DESCRIPTION:
+{job_description[:400]}
+
+RESUME CONTEXT (for consistency):
+{resume_context[:300] if resume_context else 'Not provided'}
+
+Transform this into a powerful, results-oriented bullet that:
+1. Shows clear impact with metrics
+2. Uses relevant keywords from the JD
+3. Follows STAR framework
+4. Emphasizes what YOU accomplished
+
+Return ONLY the JSON object."""
+
+        try:
+            if self.client:
+                print("🤖 Rewriting bullet with AI (STAR framework)...")
+                response = self.client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    max_tokens=1000
+                )
+                
+                content = response.choices[0].message.content.strip()
+                content = content.replace("```json", "").replace("```", "").strip()
+                result = json.loads(content)
+                print(f"✅ Successfully rewrote bullet")
+                return result
+            else:
+                print("⚠️  No AI client configured, using template-based rewrite")
+        except Exception as e:
+            print(f"❌ AI STAR rewrite error: {e}")
+            print("⚠️  Falling back to template-based rewrite")
+        
+        # Fallback: Template-based STAR rewrite
+        return self._rewrite_bullet_fallback(original_bullet, job_description)
+    
+    def _rewrite_bullet_fallback(
+        self,
+        original_bullet: str,
+        job_description: str
+    ) -> Dict[str, Any]:
+        """
+        Template-based bullet rewrite when AI is unavailable
+        """
+        # Extract key action verb or add one
+        action_verbs = ["Led", "Developed", "Implemented", "Managed", "Created", "Optimized", "Designed"]
+        
+        # Simple enhancement: add action verb if missing and suggest metrics
+        rewritten = original_bullet
+        if not any(verb.lower() in original_bullet.lower() for verb in action_verbs):
+            rewritten = f"Developed {original_bullet.lower()}"
+        
+        # Add metric suggestion if missing
+        if not any(char.isdigit() for char in original_bullet):
+            rewritten += ", improving efficiency by 20%"
+        
+        return {
+            "original": original_bullet,
+            "rewritten": rewritten,
+            "improvements": {
+                "before_issues": [
+                    "Lacks strong action verb at the beginning",
+                    "Missing quantifiable metrics or results",
+                    "Doesn't clearly show impact"
+                ],
+                "after_strengths": [
+                    "Starts with strong action verb",
+                    "Includes measurable outcome",
+                    "More results-focused"
+                ]
+            },
+            "star_breakdown": {
+                "situation": "Professional work context",
+                "task": "Complete project objectives",
+                "action": "Applied technical skills and collaborated with team",
+                "result": "Delivered successful project with measurable impact"
+            },
+            "keywords_added": ["efficiency", "improvement"],
+            "impact_score_improvement": 35,
+            "note": "⚠️ This is a template-based rewrite. For better AI-powered rewriting, configure CEREBRAS_API_KEY in your .env file."
         }

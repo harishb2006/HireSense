@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import ResumeUpload from './components/ResumeUpload';
 import AIAnalysis from './components/AIAnalysis';
 import AIInterviewer from './components/AIInterviewer';
+import StarRewriter from './components/StarRewriter';
 import './App.css';
 
 function App() {
   const [analysisData, setAnalysisData] = useState(null);
   const [activeTab, setActiveTab] = useState('upload');
+  const [interviewSummary, setInterviewSummary] = useState(null);
 
   const handleAnalysisComplete = (data) => {
     setAnalysisData(data);
@@ -16,6 +18,10 @@ function App() {
     setActiveTab('interview');
   };
 
+  const handleInterviewComplete = (summary) => {
+    setInterviewSummary(summary);
+  };
+
   return (
     <div className="min-h-screen bg-gray-100">
       {/* Header */}
@@ -23,12 +29,12 @@ function App() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-800 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center">
                 <span className="text-white text-xl font-bold">🎯</span>
               </div>
               <div>
                 <h1 className="text-gray-900 font-bold text-xl">HireSense</h1>
-                <p className="text-gray-500 text-xs">AI-Powered Resume Analyzer</p>
+                <p className="text-gray-500 text-xs">AI-Powered Career Mentor</p>
               </div>
             </div>
             <div className="flex items-center gap-4">
@@ -48,7 +54,7 @@ function App() {
       <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Navigation Tabs */}
         <div className="mb-8">
-          <div className="flex gap-2 bg-white border border-gray-200 rounded-xl p-1 max-w-md mx-auto shadow-sm">
+          <div className="flex gap-2 bg-white border border-gray-200 rounded-xl p-1 max-w-2xl mx-auto shadow-sm">
             <button
               onClick={() => setActiveTab('upload')}
               className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
@@ -57,7 +63,37 @@ function App() {
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-            Resume Analysis Tab */}
+              📊 Analysis
+            </button>
+            <button
+              onClick={() => setActiveTab('interview')}
+              disabled={!analysisData}
+              className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'interview'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : analysisData
+                  ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  : 'text-gray-400 cursor-not-allowed bg-gray-50'
+              }`}
+            >
+              🎤 Mock Interview
+            </button>
+            <button
+              onClick={() => setActiveTab('rewriter')}
+              disabled={!analysisData}
+              className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
+                activeTab === 'rewriter'
+                  ? 'bg-indigo-600 text-white shadow-md'
+                  : analysisData
+                  ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  : 'text-gray-400 cursor-not-allowed bg-gray-50'
+              }`}
+            >
+              ✨ STAR Rewriter
+            </button>
+          </div>
+        </div>
+        {/* Resume Analysis Tab */}
         {activeTab === 'upload' && (
           <>
             {/* Upload Section */}
@@ -78,8 +114,8 @@ function App() {
             {/* Features Section - Show when no analysis */}
             {!analysisData && (
               <div className="mt-16">
-                <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">Powerful Features</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">🚀 Powerful Features</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-blue-300 transition-all">
                     <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
                       <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -87,27 +123,37 @@ function App() {
                       </svg>
                     </div>
                     <h4 className="text-gray-900 font-semibold text-lg mb-2">Match Score</h4>
-                    <p className="text-gray-600 text-sm">Get a percentage match between your resume and job description</p>
+                    <p className="text-gray-600 text-sm">Get percentage match between resume and job description</p>
                   </div>
 
                   <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-indigo-300 transition-all">
                     <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mb-4">
                       <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                       </svg>
                     </div>
-                    <h4 className="text-gray-900 font-semibold text-lg mb-2">AI Insights</h4>
-                    <p className="text-gray-600 text-sm">Powered by advanced AI to provide accurate analysis and suggestions</p>
+                    <h4 className="text-gray-900 font-semibold text-lg mb-2">Mock Interview</h4>
+                    <p className="text-gray-600 text-sm">Practice targeted questions based on your weaknesses</p>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-purple-300 transition-all">
+                    <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center mb-4">
+                      <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
+                    </div>
+                    <h4 className="text-gray-900 font-semibold text-lg mb-2">STAR Rewriter</h4>
+                    <p className="text-gray-600 text-sm">Transform weak bullets into impactful achievements</p>
                   </div>
 
                   <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-green-300 transition-all">
                     <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4">
                       <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                       </svg>
                     </div>
-                    <h4 className="text-gray-900 font-semibold text-lg mb-2">Recommendations</h4>
-                    <p className="text-gray-600 text-sm">Get actionable suggestions to improve your resume content</p>
+                    <h4 className="text-gray-900 font-semibold text-lg mb-2">PDF Scorecard</h4>
+                    <p className="text-gray-600 text-sm">Download comprehensive analysis and interview feedback</p>
                   </div>
                 </div>
               </div>
@@ -122,102 +168,39 @@ function App() {
               resumeData={analysisData?.analysis} 
               jobDescription={analysisData?.jobDescription}
               interviewQuestions={analysisData?.interview?.questions}
+              onInterviewComplete={handleInterviewComplete}
             />
           </div>
         )}
 
-        {/* Interview Features - Show when no interview started */}
-        {activeTab === 'interview' && !analysisData && (
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-blue-300 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                  </svg>
-                </div>
-                <h4 className="text-gray-900 font-semibold text-lg mb-2">Interactive Conversations</h4>
-                <p className="text-gray-600 text-sm">Engage in realistic interview dialogues with AI-powered questions tailored to your profile</p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-indigo-300 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                  </svg>
-                </div>
-                <h4 className="text-gray-900 font-semibold text-lg mb-2">Real-time Feedback</h4>
-                <p className="text-gray-600 text-sm">Receive instant feedback on your answers and learn how to improve your responses</p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-green-300 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <h4 className="text-gray-900 font-semibold text-lg mb-2">Performance Analytics</h4>
-                <p className="text-gray-600 text-sm">Get detailed insights on your interview performance with scores and recommendations</p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-purple-300 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                </div>
-                <h4 className="text-gray-900 font-semibold text-lg mb-2">Unlimited Practice</h4>
-                <p className="text-gray-600 text-sm">Practice as many times as you want to build confidence and master your interview skills
-              Prepare for your real interview with personalized mock interviews and instant feedback
-            </p>
-          </div>
-        )}
-
-        {/* Upload Section */}
-        <div className="mb-12">
-          <ResumeUpload onAnalysisComplete={handleAnalysisComplete} />
-        </div>
-
-        {/* Analysis Results */}
-        {analysisData && (
+        {/* STAR Rewriter Tab */}
+        {activeTab === 'rewriter' && analysisData && (
           <div className="animate-fadeIn">
-            <AIAnalysis data={analysisData} />
+            <StarRewriter 
+              jobDescription={analysisData?.jobDescription}
+              resumeContext={analysisData?.resumeText}
+            />
           </div>
         )}
 
-        {/* Features Section - Show when no analysis */}
-        {!analysisData && (
-          <div className="mt-16">
-            <h3 className="text-2xl font-bold text-gray-900 text-center mb-8">Powerful Features</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-blue-300 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <h4 className="text-gray-900 font-semibold text-lg mb-2">Match Score</h4>
-                <p className="text-gray-600 text-sm">Get a percentage match between your resume and job description</p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-indigo-300 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                </div>
-                <h4 className="text-gray-900 font-semibold text-lg mb-2">AI Insights</h4>
-                <p className="text-gray-600 text-sm">Powered by advanced AI to provide accurate analysis and suggestions</p>
-              </div>
-
-              <div className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg hover:border-green-300 transition-all">
-                <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center mb-4">
-                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <h4 className="text-gray-900 font-semibold text-lg mb-2">Recommendations</h4>
-                <p className="text-gray-600 text-sm">Get actionable suggestions to improve your resume content</p>
-              </div>
+        {/* Placeholder for locked tabs */}
+        {(activeTab === 'interview' || activeTab === 'rewriter') && !analysisData && (
+          <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-lg">
+            <div className="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+              </svg>
             </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">Feature Locked</h3>
+            <p className="text-gray-600 mb-6 max-w-md mx-auto">
+              Upload your resume and job description first to unlock {activeTab === 'interview' ? 'mock interview' : 'STAR rewriter'} features.
+            </p>
+            <button
+              onClick={() => setActiveTab('upload')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-8 rounded-xl shadow-md hover:shadow-lg transition-all"
+            >
+              Go to Resume Analysis
+            </button>
           </div>
         )}
       </main>
@@ -226,7 +209,7 @@ function App() {
       <footer className="border-t border-gray-200 mt-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 py-6">
           <p className="text-gray-500 text-sm text-center">
-            © 2025 HireSense. Powered by AI to help you land your dream job.
+            © 2025 HireSense. Your AI-powered career mentor helping you land your dream job.
           </p>
         </div>
       </footer>

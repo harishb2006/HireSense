@@ -103,7 +103,70 @@ const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
           isFeedback: true
         };
         
-        setMessages(prev => async () => {
+        setMessages(prev => [...prev, feedbackMessage]);
+        
+        // Store answer with feedback
+        setAnswers(prev => [...prev, {
+          question: currentQuestion,
+          answer: answerText,
+          feedback: evalFeedback
+        }]);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to evaluate answer:', errorData);
+        
+        const errorMessage = {
+          type: 'ai',
+          content: '⚠️ Could not evaluate your answer. Moving to next question...',
+          timestamp: new Date().toISOString(),
+          isWarning: true
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+        
+        // Still store the answer without feedback
+        setAnswers(prev => [...prev, {
+          question: currentQuestion,
+          answer: answerText,
+          feedback: null
+        }]);
+      }
+    } catch (error) {
+      console.error('Error evaluating answer:', error);
+      
+      const errorMessage = {
+        type: 'ai',
+        content: '⚠️ Connection error. Your answer was recorded but could not be evaluated. Moving forward...',
+        timestamp: new Date().toISOString(),
+        isWarning: true
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
+      // Store answer without feedback
+      setAnswers(prev => [...prev, {
+        question: currentQuestion,
+        answer: answerText,
+        feedback: null
+      }]);
+    } finally {
+      setLoading(false);
+      
+      // Move to next question
+      const nextIndex = currentQuestionIndex + 1;
+      if (nextIndex < questions.length) {
+        setTimeout(() => {
+          askQuestion(nextIndex);
+        }, 2000);
+      } else {
+        setTimeout(() => {
+          completeInterview();
+        }, 2000);
+      }
+    }
+  };
+
+  const completeInterview = async () => {
     setInterviewComplete(true);
     setLoading(true);
     
@@ -136,90 +199,40 @@ const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
         const summaryFeedback = await response.json();
         setFeedback(summaryFeedback);
       } else {
-        // Fallback feedback
-        generateFallbackFeedback();
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to get interview summary:', errorData);
+        
+        const errorMessage = {
+          type: 'ai',
+          content: '❌ Failed to generate feedback. Please ensure the backend server is running and try again.',
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
+        setMessages(prev => [...prev, errorMessage]);
       }
     } catch (error) {
       console.error('Error getting interview summary:', error);
-      generateFallbackFeedback();
+      
+      const errorMessage = {
+        type: 'ai',
+        content: '❌ Could not connect to AI service. Please check your connection and try again.',
+        timestamp: new Date().toISOString(),
+        isError: true
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
   };
 
-  const generateFallbackFeedback = () => {
-    const avgScore = answers.length > 0
-      ? answers.reduce((sum, a) => sum + (a.feedback?.score || 70), 0) / answers.length
-      : 70;
-
-    setFeedback({
-      overall_score: Math.round(avgScore),
-      performance_level: avgScore >= 80 ? 'Excellent' : avgScore >= 60 ? 'Good' : 'Needs Improvement',
-      strengths: [
-        'Clear communication and articulation',
-        'Relevant experience demonstrated',
-        'Good engagement with questions'
-      ],
-      improvements: [
-        'Provide more specific examples with metrics',
-        'Use STAR framework more consistently',
-        'Connect answers more directly to job requirements'
-      ],
-      recommendations: [
-        'Practice the STAR method for behavioral questions',
-        'Prepare specific metrics from past achievements',
-        'Research the company and role more deeply'
-      ],
-      next_steps: [
-        'Review missing keywords from analysis',
-        'Update resume based on feedback',
-        'Practice more mock interviews',
-       CurrentQuestionIndex(0);
-    setUserAnswer('');
-    setInterviewStarted(false);
-    setInterviewComplete(false);
-    setAnswers([]iew = () => {
-    setInterviewComplete(true);
-    setLoading(false);
-    
-    const completionMessage = {
-      type: 'ai',
-      content: `Great job! You've completed the interview. I've assessed your responses and will now provide comprehensive feedback.`,
-      timestamp: new Date().toISOString()
-    };
-    
-    setMessages(prev => [...prev, completionMessage]);
-    
-    // Generate overall feedback
-    const overallFeedback = {
-      overallScore: 78,
-      strengths: [
-        'Clear communication and articulation',
-        'Good technical knowledge demonstration',
-        'Relevant experience highlighted effectively'
-      ],
-      improvements: [
-        'Provide more specific examples with metrics',
-        'Elaborate on problem-solving approaches',
-        'Connect answers more directly to job requirements'
-      ],
-      recommendations: [
-        'Practice the STAR method for behavioral questions',
-        'Research the company and role more deeply',
-        'Prepare specific metrics and achievements'
-      ]
-    };
-    
-    setFeedback(overallFeedback);
-  };
-
   const restartInterview = () => {
     setMessages([]);
     setCurrentQuestion('');
+    setCurrentQuestionIndex(0);
     setUserAnswer('');
     setInterviewStarted(false);
     setInterviewComplete(false);
-    setQuestionCount(0);
+    setAnswers([]);
     setFeedback(null);
   };
 
@@ -299,13 +312,13 @@ const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
                 </svg>
               </div>
               <div>
-                <h2 className="text-xl font-bold">AI Mock Interview</h2>currentQuestionIndex + 1, maxQuestions)} of {maxQuestions}</p>
+                <h2 className="text-xl font-bold">AI Mock Interview</h2>
+                <p className="text-blue-100 text-sm">Question {Math.min(currentQuestionIndex + 1, maxQuestions)} of {maxQuestions}</p>
               </div>
             </div>
             {!interviewComplete && (
               <div className="text-right">
-                <div className="text-2xl font-bold">{Math.round((currentQuestionIndex
-                <div className="text-2xl font-bold">{Math.round((questionCount / maxQuestions) * 100)}%</div>
+                <div className="text-2xl font-bold">{Math.round((currentQuestionIndex / maxQuestions) * 100)}%</div>
                 <div className="text-blue-100 text-sm">Complete</div>
               </div>
             )}
