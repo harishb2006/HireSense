@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 const AIAnalysis = ({ data, onStartInterview }) => {
   const [downloadingPDF, setDownloadingPDF] = useState(false);
@@ -29,7 +30,7 @@ const AIAnalysis = ({ data, onStartInterview }) => {
   const downloadPDFScorecard = async () => {
     setDownloadingPDF(true);
     try {
-      const response = await fetch('http://localhost:8000/api/rewriter/generate-scorecard', {
+      const response = await fetch(`${API_BASE_URL}/api/rewriter/generate-scorecard`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
