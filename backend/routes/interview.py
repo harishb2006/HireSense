@@ -98,7 +98,13 @@ async def start_interview(
     job_description: str = Form(...)
 ) -> Dict[str, Any]:
     """
-    Complete workflow: Upload resume, analyze, and get ready for interview
+    Complete workflow: Upload resume, analyze with AI, and generate interview questions
+    
+    Returns:
+    - resume_text: Extracted text from PDF
+    - filename: Original filename
+    - analysis: AI-powered resume analysis (match score, gaps, feedback)
+    - interview: Generated questions based on weak areas
     """
     try:
         # Step 1: Extract text from PDF
@@ -108,14 +114,14 @@ async def start_interview(
         if not resume_text.strip():
             raise HTTPException(status_code=400, detail="Could not extract text from PDF")
         
-        # Step 2: Analyze resume
+        # Step 2: AI Analysis
         analyzer = AIAnalyzer()
         analysis = analyzer.analyze_resume(
             resume_text=resume_text,
             job_description=job_description
         )
         
-        # Step 3: Generate initial interview questions
+        # Step 3: Generate interview questions based on analysis
         questions = analyzer.generate_interview_questions(
             resume_text=resume_text,
             job_description=job_description,
