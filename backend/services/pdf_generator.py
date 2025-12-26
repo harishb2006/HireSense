@@ -21,46 +21,50 @@ class PDFScorecard:
         """Setup custom paragraph styles"""
         
         # Title style
-        self.styles.add(ParagraphStyle(
-            name='CustomTitle',
-            parent=self.styles['Heading1'],
-            fontSize=24,
-            textColor=colors.HexColor('#1f2937'),
-            spaceAfter=30,
-            alignment=TA_CENTER,
-            fontName='Helvetica-Bold'
-        ))
+        if 'CustomTitle' not in self.styles:
+            self.styles.add(ParagraphStyle(
+                name='CustomTitle',
+                parent=self.styles['Heading1'],
+                fontSize=24,
+                textColor=colors.HexColor('#1f2937'),
+                spaceAfter=30,
+                alignment=TA_CENTER,
+                fontName='Helvetica-Bold'
+            ))
         
         # Section header
-        self.styles.add(ParagraphStyle(
-            name='SectionHeader',
-            parent=self.styles['Heading2'],
-            fontSize=16,
-            textColor=colors.HexColor('#2563eb'),
-            spaceAfter=12,
-            spaceBefore=20,
-            fontName='Helvetica-Bold'
-        ))
+        if 'SectionHeader' not in self.styles:
+            self.styles.add(ParagraphStyle(
+                name='SectionHeader',
+                parent=self.styles['Heading2'],
+                fontSize=16,
+                textColor=colors.HexColor('#2563eb'),
+                spaceAfter=12,
+                spaceBefore=20,
+                fontName='Helvetica-Bold'
+            ))
         
         # Body text
-        self.styles.add(ParagraphStyle(
-            name='BodyText',
-            parent=self.styles['Normal'],
-            fontSize=11,
-            textColor=colors.HexColor('#374151'),
-            spaceAfter=10,
-            alignment=TA_JUSTIFY
-        ))
+        if 'BodyText' not in self.styles:
+            self.styles.add(ParagraphStyle(
+                name='BodyText',
+                parent=self.styles['Normal'],
+                fontSize=11,
+                textColor=colors.HexColor('#374151'),
+                spaceAfter=10,
+                alignment=TA_JUSTIFY
+            ))
         
         # Bullet points
-        self.styles.add(ParagraphStyle(
-            name='BulletPoint',
-            parent=self.styles['Normal'],
-            fontSize=10,
-            textColor=colors.HexColor('#4b5563'),
-            leftIndent=20,
-            spaceAfter=8
-        ))
+        if 'BulletPoint' not in self.styles:
+            self.styles.add(ParagraphStyle(
+                name='BulletPoint',
+                parent=self.styles['Normal'],
+                fontSize=10,
+                textColor=colors.HexColor('#4b5563'),
+                leftIndent=20,
+                spaceAfter=8
+            ))
     
     def generate_full_scorecard(
         self,
