@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 const ResumeUpload = ({ onAnalysisComplete }) => {
   const [resumeFile, setResumeFile] = useState(null);
@@ -38,7 +39,7 @@ const ResumeUpload = ({ onAnalysisComplete }) => {
 
     try {
       // Use the start-interview endpoint which does everything
-      const response = await fetch('http://localhost:8000/api/interview/start-interview', {
+      const response = await fetch(`${API_BASE_URL}/api/interview/start-interview`, {
         method: 'POST',
         body: formData,
       });

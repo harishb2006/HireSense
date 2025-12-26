@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE_URL } from '../config';
 
 const StarRewriter = ({ jobDescription, resumeContext }) => {
   const [originalBullet, setOriginalBullet] = useState('');
@@ -22,7 +23,7 @@ const StarRewriter = ({ jobDescription, resumeContext }) => {
     setRewriteResult(null);
 
     try {
-      const response = await fetch('http://localhost:8000/api/rewriter/star-rewrite', {
+      const response = await fetch(`${API_BASE_URL}/api/rewriter/star-rewrite`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

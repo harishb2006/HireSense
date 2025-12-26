@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { API_BASE_URL } from '../config';
 
 const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
   const [messages, setMessages] = useState([]);
@@ -80,7 +81,7 @@ const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
 
     try {
       // Call backend to evaluate answer
-      const response = await fetch('http://localhost:8000/api/interview/evaluate-answer', {
+      const response = await fetch(`${API_BASE_URL}/api/interview/evaluate-answer`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -180,7 +181,7 @@ const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
     
     try {
       // Call backend for comprehensive summary
-      const response = await fetch('http://localhost:8000/api/interview/complete-interview', {
+      const response = await fetch(`${API_BASE_URL}/api/interview/complete-interview`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
