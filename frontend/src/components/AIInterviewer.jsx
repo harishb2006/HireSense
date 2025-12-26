@@ -112,10 +112,43 @@ const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
           feedback: evalFeedback
         }]);
       } else {
-        console.error('Failed to evaluate answer');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to evaluate answer:', errorData);
+        
+        const errorMessage = {
+          type: 'ai',
+          content: '⚠️ Could not evaluate your answer. Moving to next question...',
+          timestamp: new Date().toISOString(),
+          isWarning: true
+        };
+        
+        setMessages(prev => [...prev, errorMessage]);
+        
+        // Still store the answer without feedback
+        setAnswers(prev => [...prev, {
+          question: currentQuestion,
+          answer: answerText,
+          feedback: null
+        }]);
       }
     } catch (error) {
       console.error('Error evaluating answer:', error);
+      
+      const errorMessage = {
+        type: 'ai',
+        content: '⚠️ Connection error. Your answer was recorded but could not be evaluated. Moving forward...',
+        timestamp: new Date().toISOString(),
+        isWarning: true
+      };
+      
+      setMessages(prev => [...prev, errorMessage]);
+      
+      // Store answer without feedback
+      setAnswers(prev => [...prev, {
+        question: currentQuestion,
+        answer: answerText,
+        feedback: null
+      }]);
     } finally {
       setLoading(false);
       
@@ -166,47 +199,30 @@ const AIInterviewer = ({ resumeData, jobDescription, interviewQuestions }) => {
         const summaryFeedback = await response.json();
         setFeedback(summaryFeedback);
       } else {
-        // Fallback feedback
-        generateFallbackFeedback();
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to get interview summary:', errorData);
+        
+        const errorMessage = {
+          type: 'ai',
+          content: '❌ Failed to generate feedback. Please ensure the backend server is running and try again.',
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
+        setMessages(prev => [...prev, errorMessage]);
       }
     } catch (error) {
       console.error('Error getting interview summary:', error);
-      generateFallbackFeedback();
+      
+      const errorMessage = {
+        type: 'ai',
+        content: '❌ Could not connect to AI service. Please check your connection and try again.',
+        timestamp: new Date().toISOString(),
+        isError: true
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setLoading(false);
     }
-  };
-
-  const generateFallbackFeedback = () => {
-    const avgScore = answers.length > 0
-      ? answers.reduce((sum, a) => sum + (a.feedback?.score || 70), 0) / answers.length
-      : 70;
-
-    setFeedback({
-      overall_score: Math.round(avgScore),
-      performance_level: avgScore >= 80 ? 'Excellent' : avgScore >= 60 ? 'Good' : 'Needs Improvement',
-      strengths: [
-        'Clear communication and articulation',
-        'Relevant experience demonstrated',
-        'Good engagement with questions'
-      ],
-      improvements: [
-        'Provide more specific examples with metrics',
-        'Use STAR framework more consistently',
-        'Connect answers more directly to job requirements'
-      ],
-      recommendations: [
-        'Practice the STAR method for behavioral questions',
-        'Prepare specific metrics from past achievements',
-        'Research the company and role more deeply'
-      ],
-      next_steps: [
-        'Review missing keywords from analysis',
-        'Update resume based on feedback',
-        'Practice more mock interviews',
-        'Consider taking courses or certifications in identified gap areas'
-      ]
-    });
   };
 
   const restartInterview = () => {

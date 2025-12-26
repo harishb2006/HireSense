@@ -57,9 +57,9 @@ const StarRewriter = ({ jobDescription, resumeContext }) => {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-2xl p-8 shadow-xl">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-2xl p-8 shadow-xl">
         <h2 className="text-3xl font-bold mb-3">✨ STAR Rewriter</h2>
-        <p className="text-purple-100 text-lg">
+        <p className="text-blue-100 text-lg">
           Transform weak bullet points into impactful achievements using the STAR framework
         </p>
       </div>
@@ -96,7 +96,7 @@ const StarRewriter = ({ jobDescription, resumeContext }) => {
           value={originalBullet}
           onChange={(e) => setOriginalBullet(e.target.value)}
           placeholder="Example: Worked on team project to develop new features for the application"
-          className="w-full border border-gray-300 rounded-xl p-4 text-gray-800 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all min-h-[120px] resize-none"
+          className="w-full border border-gray-300 rounded-xl p-4 text-gray-800 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all min-h-[120px] resize-none"
         />
         
         {error && (
@@ -108,7 +108,7 @@ const StarRewriter = ({ jobDescription, resumeContext }) => {
         <button
           onClick={handleRewrite}
           disabled={loading || !originalBullet.trim()}
-          className="mt-4 w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
+          className="mt-4 w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold py-3 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:shadow-xl"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">

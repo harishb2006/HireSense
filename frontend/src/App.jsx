@@ -83,7 +83,7 @@ function App() {
               disabled={!analysisData}
               className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
                 activeTab === 'rewriter'
-                  ? 'bg-purple-600 text-white shadow-md'
+                  ? 'bg-indigo-600 text-white shadow-md'
                   : analysisData
                   ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   : 'text-gray-400 cursor-not-allowed bg-gray-50'
