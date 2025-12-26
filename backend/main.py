@@ -10,8 +10,9 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",  # Local Vite dev server
         "http://localhost:4173",  # Local Vite preview
-        "https://hire-sense-63teo8xko-harishs-projects-605e156a.vercel.app",  # Vercel deployment
-        "https://*.vercel.app",  # All Vercel preview deployments
+        "https://hire-sense-sigma.vercel.app",  # Vercel production
+        "https://hire-sense-63teo8xko-harishs-projects-605e156a.vercel.app",  # Vercel preview
+        "*",  # Allow all origins (for development - remove in production if needed)
     ],
     allow_credentials=True,
     allow_methods=["*"],
