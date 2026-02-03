@@ -1,8 +1,19 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import resume, jd, interview, rewriter
+from routes import resume, jd, rewriter, mock_interview
+from contextlib import asynccontextmanager
+from database import init_db, close_db
 
-app = FastAPI(title="HireSense API")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Database is already initialized via Docker init.sql
+    yield
+    # Shutdown: Close database connections
+    await close_db()
+
+
+app = FastAPI(title="HireSense API", lifespan=lifespan)
 
 # Enable CORS for frontend
 app.add_middleware(
@@ -21,9 +32,9 @@ app.add_middleware(
 
 app.include_router(resume.router)
 app.include_router(jd.router)
-app.include_router(interview.router)
 app.include_router(rewriter.router)
+app.include_router(mock_interview.router)
 
 @app.get("/")
 async def root():
-    return {"message": "HireSense API is running"}
+    return {"message": "HireSense Prep Pro API is running"}

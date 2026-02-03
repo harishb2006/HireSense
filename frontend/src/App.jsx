@@ -67,23 +67,20 @@ function App() {
             </button>
             <button
               onClick={() => setActiveTab('interview')}
-              disabled={!analysisData}
               className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
                 activeTab === 'interview'
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : analysisData
-                  ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  : 'text-gray-400 cursor-not-allowed bg-gray-50'
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              🎤 Mock Interview
+              🎯 Prep Pro Interview
             </button>
             <button
               onClick={() => setActiveTab('rewriter')}
               disabled={!analysisData}
               className={`flex-1 px-6 py-3 rounded-lg font-medium transition-all ${
                 activeTab === 'rewriter'
-                  ? 'bg-indigo-600 text-white shadow-md'
+                  ? 'bg-blue-600 text-white shadow-md'
                   : analysisData
                   ? 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                   : 'text-gray-400 cursor-not-allowed bg-gray-50'
@@ -161,15 +158,10 @@ function App() {
           </>
         )}
 
-        {/* AI Interview Tab */}
-        {activeTab === 'interview' && analysisData && (
+        {/* Prep Pro Interview Tab - NEW AI SYSTEM */}
+        {activeTab === 'interview' && (
           <div className="animate-fadeIn">
-            <AIInterviewer 
-              resumeData={analysisData?.analysis} 
-              jobDescription={analysisData?.jobDescription}
-              interviewQuestions={analysisData?.interview?.questions}
-              onInterviewComplete={handleInterviewComplete}
-            />
+            <AIInterviewer />
           </div>
         )}
 

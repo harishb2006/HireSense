@@ -2,8 +2,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Dict, Any, Optional
-from services.ai_analyzer import AIAnalyzer
 from services.pdf_generator import PDFScorecard
+from langchain_openai import ChatOpenAI
+from langchain_core.messages import HumanMessage, SystemMessage
+import os
 import io
 
 router = APIRouter(prefix="/api/rewriter", tags=["STAR Rewriter"])
@@ -32,12 +34,69 @@ async def rewrite_bullet_star(payload: StarRewriteRequest) -> Dict[str, Any]:
         raise HTTPException(status_code=400, detail="Job description cannot be empty")
     
     try:
-        analyzer = AIAnalyzer()
-        result = analyzer.rewrite_bullet_with_star(
-            original_bullet=payload.original_bullet,
-            job_description=payload.job_description,
-            resume_context=payload.resume_context
+        # Initialize Cerebras AI via LangChain
+        llm = ChatOpenAI(
+            model="llama3.3-70b",
+            api_key=os.getenv("CEREBRAS_API_KEY"),
+            base_url="https://api.cerebras.ai/v1",
+            temperature=0.7
         )
+        
+        # Construct the prompt
+        system_prompt = """You are an expert resume writer specializing in the STAR (Situation, Task, Action, Result) framework.
+Your job is to transform weak, task-focused bullet points into powerful, impact-driven accomplishments.
+
+STAR Framework:
+- Situation: Brief context (when needed)
+- Task: Your responsibility
+- Action: What YOU did specifically
+- Result: Quantifiable impact/outcome
+
+Guidelines:
+1. Start with strong action verbs
+2. Include metrics and numbers whenever possible
+3. Focus on achievements, not duties
+4. Keep it concise (1-2 lines max)
+5. Tailor to the target job description
+6. Remove vague language like "helped with" or "responsible for"
+
+Return a JSON object with these fields:
+{
+    "original": "the original bullet",
+    "rewritten": "the STAR-formatted bullet",
+    "improvements": ["list of key improvements made"],
+    "impact_score": 1-10 (how much stronger is the new version)
+}"""
+
+        context_note = f"\n\nAdditional resume context:\n{payload.resume_context}" if payload.resume_context else ""
+        
+        user_prompt = f"""Job Description:
+{payload.job_description}
+
+Original Bullet Point:
+{payload.original_bullet}{context_note}
+
+Rewrite this bullet point using the STAR framework to maximize impact and alignment with the job description."""
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt)
+        ]
+        
+        response = llm.invoke(messages)
+        
+        # Parse the response
+        import json
+        try:
+            result = json.loads(response.content)
+        except json.JSONDecodeError:
+            # If AI doesn't return valid JSON, create a structured response
+            result = {
+                "original": payload.original_bullet,
+                "rewritten": response.content,
+                "improvements": ["AI-enhanced with STAR framework"],
+                "impact_score": 7
+            }
         
         return result
     
