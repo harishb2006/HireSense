@@ -38,8 +38,8 @@ const ResumeUpload = ({ onAnalysisComplete }) => {
     formData.append('job_description', jobDescription);
 
     try {
-      // Use the start-interview endpoint which does everything
-      const response = await fetch(`${API_BASE_URL}/api/interview/start-interview`, {
+      // Use the analyze endpoint 
+      const response = await fetch(`${API_BASE_URL}/api/resume/analyze`, {
         method: 'POST',
         body: formData,
       });
