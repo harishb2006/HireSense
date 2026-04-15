@@ -7,7 +7,7 @@ import os
 import json
 from typing import Dict, List, Optional, Tuple
 from datetime import datetime
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from langchain.prompts import ChatPromptTemplate
 from langchain.schema import HumanMessage, SystemMessage
 
@@ -22,11 +22,10 @@ class AIInterviewer:
         self.role = role
         self.seniority_level = seniority_level
         
-        # Initialize Cerebras LLM via OpenAI-compatible API
-        self.llm = ChatOpenAI(
-            base_url="https://api.cerebras.ai/v1",
-            api_key=os.environ.get("CEREBRAS_API_KEY"),
-            model=os.environ.get("CEREBRAS_MODEL", "llama-3.3-70b"),
+        # Initialize Groq LLM
+        self.llm = ChatGroq(
+            api_key=os.environ.get("GROQ_API_KEY"),
+            model_name="llama-3.3-70b-versatile",
             temperature=0.7,
             max_tokens=2000
         )
