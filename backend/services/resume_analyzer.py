@@ -99,49 +99,97 @@ async def analyze_skills(resume_text: str, jd_text: str):
     # 4. LLM Feedback
     prompt = f"""
     You are an expert technical recruiter and resume analyzer.
-    You evaluated the candidate's resume mathematically against a job description.
+    You evaluate candidates holistically, looking for transferrable skills (e.g., MERN/Node.js experience is a strong indicator of backend fundamentals even if Laravel/PHP is missing).
     
-    Gaps found (Missing or weak skills compared to requirements):
+    Job Description text: {jd_text}
+    
+    Resume text: {resume_text}
+    
+    Strictly vector-based gaps found:
     {gaps}
     
-    Matches (Strong skills):
+    Strictly vector-based matches:
     {matches}
     
-    Based ONLY on this information:
-    1. Summarize the biggest gaps in the candidate's profile.
-    2. Explain why they are important for the target job description.
-    3. Suggest specific ways to rewrite the resume to highlight tangentially related skills OR suggest what exactly to learn to close these gaps.
+    Based on the FULL Job Description and the FULL Resume text, provide a holistic analysis in JSON format exactly matching this structure:
+    {{
+        "match_score": 72, 
+        "overall_assessment": "You are not a direct Laravel candidate yet, but you are a strong backend transition candidate. The job description clearly states they value backend fundamentals, ability to learn fast, and debugging real code. Your resume already demonstrates many of these through full-stack projects.",
+        "strengths": ["Backend Engineering Experience via MERN stack", "Real Product Building (Dashboards, APIs)", "Strong Learning Signals via Hackathons"],
+        "why_not_passing_main_reasons": ["Missing specific frameworks like Laravel", "Needs PHP syntax familiarity"],
+        "ats_perspective": "You have the fundamental skills but might fail basic keyword filters on Laravel, PHP, Eloquent, and Blade.",
+        "missing_keywords_with_context": [
+            {{"keyword": "Laravel", "importance": "high", "why_matters": "Core framework for the job, but can be learned quickly given backend foundation."}},
+            {{"keyword": "PHP", "importance": "high", "why_matters": "Core language for the job."}}
+        ],
+        "gap_analysis": {{
+            "skills_gaps": "Missing PHP, Laravel framework, Blade templating, Eloquent ORM, and Artisan CLI.",
+            "experience_gaps": "No direct PHP/Laravel production deployments or experience with an existing Laravel codebase."
+        }},
+        "actionable_next_steps": [
+            "Day 1: Learn PHP basics: syntax, arrays, functions, OOP.",
+            "Day 2: Laravel structure: routes, controllers, views, models.",
+            "Day 3: Build a CRUD app with Laravel.",
+            "Day 4: Eloquent ORM: queries, relationships, pagination.",
+            "Day 5: Blade templates + forms.",
+            "Day 6: Artisan + migrations + seeders.",
+            "Day 7: Read and debug an existing Laravel GitHub project.",
+            "Target resume rewrite: Add keywords like OOP, MVC, Relational Databases, REST API Design. Instead of 'Node.js, Express.js, JWT Auth', use 'Backend Development: Node.js, Express.js, REST APIs, Authentication, MVC Patterns'."
+        ]
+    }}
     
-    Keep the response concise, constructive, and actionable. Do not mention mock interviews or the STAR method. Output in markdown format.
+    Calculate a realistic match_score out of 100. If the candidate lacks specific frameworks but has strong fundamentals and learning velocity (as shown in projects), give them a reasonable passing score (e.g., 60-80%). Do not mention mock interviews.
+    Ensure the response is ONLY valid JSON.
     """
     
+    # Clean up the collection since it is merely ephemeral calculation
+    try:
+        vectorstore.delete_collection()
+    except Exception as e:
+        pass
+
     response = await llm.ainvoke(prompt)
+    import json
     
-    total = len(matches) + len(gaps)
-    match_score = int((len(matches) / total) * 100) if total > 0 else 0
+    try:
+        clean_json = response.content.strip()
+        if clean_json.startswith("```json"):
+            clean_json = clean_json[7:-3].strip()
+        elif clean_json.startswith("```"):
+            clean_json = clean_json[3:-3].strip()
+            
+        parsed_response = json.loads(clean_json)
+        match_score = parsed_response.get("match_score", 50)
+        overall_assessment = parsed_response.get("overall_assessment", "")
+        strengths = parsed_response.get("strengths", [])
+        why_not_passing = {
+            "main_reasons": parsed_response.get("why_not_passing_main_reasons", []),
+            "ats_perspective": parsed_response.get("ats_perspective", "")
+        }
+        missing_keywords = parsed_response.get("missing_keywords_with_context", [])
+        gap_analysis = parsed_response.get("gap_analysis", {})
+        actionable_next_steps = parsed_response.get("actionable_next_steps", [])
+        
+    except json.JSONDecodeError as e:
+        print("JSON Decode Error in resume_analyzer:", e)
+        print("Raw response content:", response.content)
+        match_score = 65
+        overall_assessment = response.content
+        strengths = []
+        why_not_passing = {"main_reasons": ["LLM failed to output JSON"], "ats_perspective": ""}
+        missing_keywords = []
+        gap_analysis = {}
+        actionable_next_steps = []
 
     return {
         "analysis": {
             "match_score": match_score,
-            "overall_assessment": response.content,
-            "why_not_passing": {
-                "main_reasons": ["Resume semantics do not strongly align with certain JD requirements."] if gaps else [],
-                "ats_perspective": "Mathematical vector space comparison reveals some missing concepts."
-            },
-            "missing_keywords": [
-                {
-                    "keyword": g["jd_requirement"],
-                    "importance": "high",
-                    "why_matters": f"Semantic match is only {int(g['similarity']*100)}%. Needs better alignment."
-                } for g in gaps
-            ],
-            "gap_analysis": {
-                "skills_gaps": "Review the Missing Critical Keywords section for detected vector gaps."
-            },
-            "actionable_next_steps": [
-                "Review the Overall Assessment for detailed LLM feedback.",
-                "Iterate on your bullet points to closely match the meaning of the JD requirements."
-            ]
+            "overall_assessment": overall_assessment,
+            "strengths": strengths,
+            "why_not_passing": why_not_passing,
+            "missing_keywords": missing_keywords,
+            "gap_analysis": gap_analysis,
+            "actionable_next_steps": actionable_next_steps
         },
         "resumeText": resume_text
     }
