@@ -9,6 +9,7 @@ const AIAnalysis = ({ data, onStartInterview }) => {
   const { analysis } = data;
   const matchScore = analysis.match_score || 0;
   const overallAssessment = analysis.overall_assessment || '';
+  const strengths = analysis.strengths || [];
   const whyNotPassing = analysis.why_not_passing || {};
   const missingKeywords = analysis.missing_keywords || [];
   const gapAnalysis = analysis.gap_analysis || {};
@@ -110,8 +111,28 @@ const AIAnalysis = ({ data, onStartInterview }) => {
             </svg>
             Overall Assessment
           </h3>
-          <p className="text-gray-700 leading-relaxed">{overallAssessment}</p>
+          <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">{overallAssessment}</p>
         </div>
+
+        {/* Strengths Identified Section */}
+        {strengths.length > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-xl p-6 mt-6">
+            <h3 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Strengths Identified
+            </h3>
+            <ul className="space-y-2">
+              {strengths.map((str, idx) => (
+                <li key={idx} className="flex items-start gap-2">
+                  <span className="text-green-600 mt-1">✓</span>
+                  <span className="text-gray-700">{str}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       {/* Why Not Passing Section */}
